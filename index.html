@@ -95,6 +95,8 @@
             font-weight: normal;
         }
 
+        input[type="text"],
+        input[type="date"],
         input[type="number"],
         select {
             padding: 10px 14px;
@@ -105,6 +107,8 @@
             transition: border-color 0.2s;
         }
 
+        input[type="text"]:focus,
+        input[type="date"]:focus,
         input[type="number"]:focus,
         select:focus {
             border-color: var(--primary);
@@ -142,7 +146,6 @@
             background-color: var(--primary-hover);
         }
 
-        /* Results Box */
         .results-card {
             margin: 30px;
             padding: 25px;
@@ -196,6 +199,13 @@
             font-size: 0.9rem;
             border-radius: 4px;
         }
+
+        .email-status {
+            text-align: center;
+            margin-top: 15px;
+            font-style: italic;
+            color: #666;
+        }
     </style>
 </head>
 <body>
@@ -206,12 +216,25 @@
         <p>(according to the HUNT study)</p>
     </div>
 
-    <form id="screeningForm">
+    <!-- ⚠️ LƯU Ý: Thay "YOUR_FORMSPREE_ENDPOINT" bằng đường link từ Formspree của bạn -->
+    <form id="screeningForm" action="https://formspree.io/f/YOUR_FORMSPREE_ENDPOINT" method="POST">
         <div class="form-grid">
+            
+            <!-- THÔNG TIN CÁ NHÂN MỚI -->
+            <div class="form-group">
+                <label for="fullName">Full Name (Họ và Tên):</label>
+                <input type="text" id="fullName" name="fullName" required placeholder="e.g. Nguyen Van A">
+            </div>
+
+            <div class="form-group">
+                <label for="dob">Date of Birth (Ngày sinh):</label>
+                <input type="date" id="dob" name="dob" required>
+            </div>
+
             <!-- 1. Age -->
             <div class="form-group">
                 <label for="age">1. Age (In Years):</label>
-                <input type="number" id="age" min="18" max="100" required placeholder="e.g. 55">
+                <input type="number" id="age" name="age" min="18" max="100" required placeholder="e.g. 55">
             </div>
 
             <!-- 2. Sex -->
@@ -226,13 +249,13 @@
             <!-- 3. Years Smoked -->
             <div class="form-group">
                 <label for="yearsSmoked">3. Total years smoked: <br><span class="sub">(0 if non-smoker)</span></label>
-                <input type="number" id="yearsSmoked" min="0" max="80" value="0" required>
+                <input type="number" id="yearsSmoked" name="yearsSmoked" min="0" max="80" value="0" required>
             </div>
 
             <!-- 4. Cigarettes per day -->
             <div class="form-group">
                 <label for="cigsPerDay">4. Cigarettes smoked daily: <br><span class="sub">(0 if non-smoker)</span></label>
-                <input type="number" id="cigsPerDay" min="0" max="100" value="0" required>
+                <input type="number" id="cigsPerDay" name="cigsPerDay" min="0" max="100" value="0" required>
             </div>
 
             <!-- 5. Cough daily -->
@@ -247,29 +270,29 @@
             <!-- 6. Height & Weight -->
             <div class="form-group">
                 <label for="height">6. Height (cm):</label>
-                <input type="number" id="height" min="100" max="250" placeholder="e.g. 175" required>
+                <input type="number" id="height" name="height" min="100" max="250" placeholder="e.g. 175" required>
             </div>
             <div class="form-group">
                 <label for="weight">Weight (kg):</label>
-                <input type="number" id="weight" min="30" max="250" placeholder="e.g. 70" required>
+                <input type="number" id="weight" name="weight" min="30" max="250" placeholder="e.g. 70" required>
             </div>
 
             <!-- 7. Quit time -->
             <div class="form-group">
                 <label for="quitTime">7. If previously smoked, how long since you stopped? <span class="sub">(Years)</span></label>
-                <input type="number" id="quitTime" min="0" max="60" value="0" required>
+                <input type="number" id="quitTime" name="quitTime" min="0" max="60" value="0" required>
             </div>
 
             <!-- 8. Smoke exposure -->
             <div class="form-group">
                 <label for="smokeExposure">8. Hours usually in a smoky room each day? <span class="sub">(Hours)</span></label>
-                <input type="number" id="smokeExposure" min="0" max="24" value="0" step="0.5" required>
+                <input type="number" id="smokeExposure" name="smokeExposure" min="0" max="24" value="0" step="0.5" required>
             </div>
 
             <!-- 9. Perception -->
             <div class="form-group full-width">
                 <label for="perception">9. Do you feel lung cancer screening is necessary for individuals exposed to secondhand smoke (passive smokers)?</label>
-                <select id="perception" required>
+                <select id="perception" name="perception" required>
                     <option value="Strongly disagree">Strongly disagree</option>
                     <option value="Disagree">Disagree</option>
                     <option value="Neutral" selected>Neutral</option>
@@ -278,7 +301,13 @@
                 </select>
             </div>
 
-            <button type="submit" class="btn-submit">Calculate Risk Score</button>
+            <!-- CÁC TRƯỜNG DỮ LIỆU ẨN ĐỂ GỬI ĐIỂM VỀ EMAIL -->
+            <input type="hidden" id="calculatedBMI" name="calculatedBMI">
+            <input type="hidden" id="calculatedPackYears" name="calculatedPackYears">
+            <input type="hidden" id="totalRiskScore" name="totalRiskScore">
+            <input type="hidden" id="recommendationText" name="recommendationText">
+
+            <button type="submit" class="btn-submit">Calculate Risk & Submit Results</button>
         </div>
     </form>
 
@@ -287,6 +316,7 @@
         <div id="scoreDisplay" class="score-display">Total Score: 0</div>
         <div id="recommendation" class="recommendation"></div>
         <div id="specialWarning" class="special-note" style="display: none;"></div>
+        <div id="emailStatus" class="email-status"></div>
 
         <h3>Points Breakdown</h3>
         <table class="breakdown-table">
@@ -303,7 +333,6 @@
 </div>
 
 <script>
-    // Interpolation helper function based on nomogram data points
     function interpolate(val, pointsMap) {
         if (val <= pointsMap[0][0]) return pointsMap[0][1];
         if (val >= pointsMap[pointsMap.length - 1][0]) return pointsMap[pointsMap.length - 1][1];
@@ -318,18 +347,31 @@
         return 0;
     }
 
-    // Nomogram mappings [Value, Points]
     const ageMap = [[20, 0], [25, 2.7], [30, 4.5], [35, 5.8], [40, 6.8], [45, 7.6], [50, 8.2], [60, 9.0], [70, 9.5], [85, 10.0]];
     const packYearsMap = [[0, 0], [1, 0.5], [5, 2.7], [10, 3.8], [15, 4.5], [25, 5.3], [40, 6.0]];
     const bmiMap = [[18, 1.8], [26, 1.0], [40, 0.0]];
     const quitTimeMap = [[0, 1.8], [5, 1.1], [45, 0.0]];
-    const smokeExpMap = [[0, 0.0], [6, 0.8]];
     const smokeIntensityMap = [[0, 0.0], [10, 1.5], [25, 0.8], [40, 0.0]];
 
-    document.getElementById('screeningForm').addEventListener('submit', function(e) {
+    // LOGIC TÍNH ĐIỂM SMOKE EXPOSURE THEO MỐC ĐÃ CẦU
+    function getSmokeExpPoints(hours) {
+        if (hours <= 0) return 0;
+        if (hours < 6) return (hours / 6) * 1;
+        if (hours === 6) return 1;
+        if (hours > 6 && hours < 9) return 2;
+        if (hours >= 9 && hours < 12) return 3;
+        if (hours >= 12 && hours < 15) return 4;
+        if (hours >= 15 && hours < 18) return 5;
+        if (hours >= 18 && hours <= 24) return 6;
+        return 6;
+    }
+
+    const form = document.getElementById('screeningForm');
+
+    form.addEventListener('submit', function(e) {
         e.preventDefault();
 
-        // Get Input Values
+        // 1. Thu thập dữ liệu
         const age = parseFloat(document.getElementById('age').value);
         const sex = document.querySelector('input[name="sex"]:checked').value;
         const yearsSmoked = parseFloat(document.getElementById('yearsSmoked').value);
@@ -340,47 +382,49 @@
         const quitTime = parseFloat(document.getElementById('quitTime').value);
         const smokeExposure = parseFloat(document.getElementById('smokeExposure').value);
 
-        // Calculations
+        // 2. Tính toán chỉ số phụ
         const bmi = weight / Math.pow(height / 100, 2);
         const packYears = (yearsSmoked * cigsPerDay) / 20;
 
-        // Scoring Logic
+        // 3. Tính điểm từng thành phần
         const ptsMale = (sex === 'male') ? 0.3 : 0.0;
         const ptsAge = interpolate(age, ageMap);
         const ptsPackYears = interpolate(packYears, packYearsMap);
         const ptsCough = (cough === 'yes') ? 0.6 : 0.0;
         
-        // Clamp BMI between 18 and 40 for mapping
         const clampedBmi = Math.min(Math.max(bmi, 18), 40);
         const ptsBmi = interpolate(clampedBmi, bmiMap);
 
         const ptsQuitTime = (yearsSmoked > 0) ? interpolate(quitTime, quitTimeMap) : 0;
-        const ptsSmokeExp = interpolate(smokeExposure, smokeExpMap);
+        const ptsSmokeExp = getSmokeExpPoints(smokeExposure);
         const ptsIntensity = (cigsPerDay > 0) ? interpolate(cigsPerDay, smokeIntensityMap) : 0;
 
-        // Total
+        // 4. Tổng điểm
         const totalPoints = ptsMale + ptsAge + ptsPackYears + ptsCough + ptsBmi + ptsQuitTime + ptsSmokeExp + ptsIntensity;
 
-        // Display Results
+        // 5. Hiển thị kết quả lên giao diện
         const resultsCard = document.getElementById('resultsCard');
         const scoreDisplay = document.getElementById('scoreDisplay');
         const recommendation = document.getElementById('recommendation');
         const specialWarning = document.getElementById('specialWarning');
         const breakdownBody = document.getElementById('breakdownBody');
+        const emailStatus = document.getElementById('emailStatus');
 
         scoreDisplay.textContent = `Total Score: ${totalPoints.toFixed(1)} Points`;
 
+        let recText = "";
         if (totalPoints > 15) {
-            recommendation.textContent = "High Risk (>15 Points): Consider Low-Dose Computed Tomography (LDCT) Screening.";
+            recText = "High Risk (>15 Points): Consider Low-Dose Computed Tomography (LDCT) Screening.";
+            recommendation.textContent = recText;
             recommendation.style.backgroundColor = "var(--alert-high)";
             recommendation.style.color = "white";
         } else {
-            recommendation.textContent = "Low to Moderate Risk (≤15 Points): Routine LDCT screening may not be necessary based on this score alone.";
+            recText = "Low to Moderate Risk (≤15 Points): Routine LDCT screening may not be necessary based on this score alone.";
+            recommendation.textContent = recText;
             recommendation.style.backgroundColor = "var(--alert-low)";
             recommendation.style.color = "white";
         }
 
-        // Check Special Non-Smoker / Secondhand Smoke condition
         if (sex === 'female' && age > 50 && smokeExposure > 0) {
             specialWarning.style.display = 'block';
             specialWarning.innerHTML = "<strong>Special Note:</strong> Non-smokers are not safe! As a woman over 50 exposed to household smoke, you are recommended to <strong>screen early for yourself and your family</strong>.";
@@ -388,7 +432,6 @@
             specialWarning.style.display = 'none';
         }
 
-        // Populate Table Breakdown
         breakdownBody.innerHTML = `
             <tr><td>Sex (Male)</td><td>${sex.toUpperCase()}</td><td>${ptsMale.toFixed(2)}</td></tr>
             <tr><td>Age</td><td>${age} yrs</td><td>${ptsAge.toFixed(2)}</td></tr>
@@ -402,6 +445,38 @@
 
         resultsCard.classList.add('active');
         resultsCard.scrollIntoView({ behavior: 'smooth' });
+
+        // 6. Gán các chỉ số tính toán vào trường ẩn để gửi qua Email
+        document.getElementById('calculatedBMI').value = bmi.toFixed(1);
+        document.getElementById('calculatedPackYears').value = packYears.toFixed(1);
+        document.getElementById('totalRiskScore').value = totalPoints.toFixed(1);
+        document.getElementById('recommendationText').value = recText;
+
+        // 7. Gửi dữ liệu về Email thông qua Formspree (nếu đã thiết lập Endpoint)
+        const actionUrl = form.getAttribute('action');
+        if (actionUrl && !actionUrl.includes('YOUR_FORMSPREE_ENDPOINT')) {
+            emailStatus.textContent = "Sending results to administrator...";
+            
+            const formData = new FormData(form);
+            fetch(actionUrl, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json'
+                }
+            }).then(response => {
+                if (response.ok) {
+                    emailStatus.textContent = "✅ Results have been successfully submitted to the administrator!";
+                    emailStatus.style.color = "green";
+                } else {
+                    emailStatus.textContent = "⚠️ Form submission failed. Please try again later.";
+                    emailStatus.style.color = "red";
+                }
+            }).catch(error => {
+                emailStatus.textContent = "⚠️ Network error while submitting results.";
+                emailStatus.style.color = "red";
+            });
+        }
     });
 </script>
 
