@@ -216,18 +216,18 @@
         <p>(according to the HUNT study)</p>
     </div>
 
-    <!-- ⚠️ LƯU Ý: Thay "YOUR_FORMSPREE_ENDPOINT" bằng đường link từ Formspree của bạn -->
+    <!-- NOTE: Replace YOUR_FORMSPREE_ENDPOINT with your Formspree ID -->
     <form id="screeningForm" action="https://formspree.io/f/YOUR_FORMSPREE_ENDPOINT" method="POST">
         <div class="form-grid">
             
-            <!-- THÔNG TIN CÁ NHÂN MỚI -->
+            <!-- PERSONAL INFORMATION -->
             <div class="form-group">
-                <label for="fullName">Full Name (Họ và Tên):</label>
-                <input type="text" id="fullName" name="fullName" required placeholder="e.g. Nguyen Van A">
+                <label for="fullName">Full Name:</label>
+                <input type="text" id="fullName" name="fullName" required placeholder="e.g. John Doe">
             </div>
 
             <div class="form-group">
-                <label for="dob">Date of Birth (Ngày sinh):</label>
+                <label for="dob">Date of Birth:</label>
                 <input type="date" id="dob" name="dob" required>
             </div>
 
@@ -301,7 +301,7 @@
                 </select>
             </div>
 
-            <!-- CÁC TRƯỜNG DỮ LIỆU ẨN ĐỂ GỬI ĐIỂM VỀ EMAIL -->
+            <!-- HIDDEN FIELDS FOR EMAIL SUBMISSION -->
             <input type="hidden" id="calculatedBMI" name="calculatedBMI">
             <input type="hidden" id="calculatedPackYears" name="calculatedPackYears">
             <input type="hidden" id="totalRiskScore" name="totalRiskScore">
@@ -353,7 +353,7 @@
     const quitTimeMap = [[0, 1.8], [5, 1.1], [45, 0.0]];
     const smokeIntensityMap = [[0, 0.0], [10, 1.5], [25, 0.8], [40, 0.0]];
 
-    // LOGIC TÍNH ĐIỂM SMOKE EXPOSURE THEO MỐC ĐÃ CẦU
+    // SMOKE EXPOSURE CALCULATION LOGIC
     function getSmokeExpPoints(hours) {
         if (hours <= 0) return 0;
         if (hours < 6) return (hours / 6) * 1;
@@ -371,7 +371,7 @@
     form.addEventListener('submit', function(e) {
         e.preventDefault();
 
-        // 1. Thu thập dữ liệu
+        // 1. Collect Input Data
         const age = parseFloat(document.getElementById('age').value);
         const sex = document.querySelector('input[name="sex"]:checked').value;
         const yearsSmoked = parseFloat(document.getElementById('yearsSmoked').value);
@@ -382,11 +382,11 @@
         const quitTime = parseFloat(document.getElementById('quitTime').value);
         const smokeExposure = parseFloat(document.getElementById('smokeExposure').value);
 
-        // 2. Tính toán chỉ số phụ
+        // 2. Calculate Secondary Metrics
         const bmi = weight / Math.pow(height / 100, 2);
         const packYears = (yearsSmoked * cigsPerDay) / 20;
 
-        // 3. Tính điểm từng thành phần
+        // 3. Calculate Individual Points
         const ptsMale = (sex === 'male') ? 0.3 : 0.0;
         const ptsAge = interpolate(age, ageMap);
         const ptsPackYears = interpolate(packYears, packYearsMap);
@@ -399,10 +399,10 @@
         const ptsSmokeExp = getSmokeExpPoints(smokeExposure);
         const ptsIntensity = (cigsPerDay > 0) ? interpolate(cigsPerDay, smokeIntensityMap) : 0;
 
-        // 4. Tổng điểm
+        // 4. Calculate Total Points
         const totalPoints = ptsMale + ptsAge + ptsPackYears + ptsCough + ptsBmi + ptsQuitTime + ptsSmokeExp + ptsIntensity;
 
-        // 5. Hiển thị kết quả lên giao diện
+        // 5. Display Results
         const resultsCard = document.getElementById('resultsCard');
         const scoreDisplay = document.getElementById('scoreDisplay');
         const recommendation = document.getElementById('recommendation');
@@ -446,16 +446,16 @@
         resultsCard.classList.add('active');
         resultsCard.scrollIntoView({ behavior: 'smooth' });
 
-        // 6. Gán các chỉ số tính toán vào trường ẩn để gửi qua Email
+        // 6. Assign Values to Hidden Inputs for Email
         document.getElementById('calculatedBMI').value = bmi.toFixed(1);
         document.getElementById('calculatedPackYears').value = packYears.toFixed(1);
         document.getElementById('totalRiskScore').value = totalPoints.toFixed(1);
         document.getElementById('recommendationText').value = recText;
 
-        // 7. Gửi dữ liệu về Email thông qua Formspree (nếu đã thiết lập Endpoint)
+        // 7. Send Email via Formspree
         const actionUrl = form.getAttribute('action');
         if (actionUrl && !actionUrl.includes('YOUR_FORMSPREE_ENDPOINT')) {
-            emailStatus.textContent = "Sending results to administrator...";
+            emailStatus.textContent = "Submitting results to administrator...";
             
             const formData = new FormData(form);
             fetch(actionUrl, {
