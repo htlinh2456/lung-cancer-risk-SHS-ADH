@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lung Cancer Screening Risk Calculator (HUNT Study)</title>
+    <style>
+        :root {
+            --primary: #800000;
+            --primary-hover: #5c0000;
+            --bg-color: #f4f6f8;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --border-color: #e0e0e0;
+            --alert-high: #d9534f;
+            --alert-low: #5cb85c;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .header {
+            background-color: var(--primary);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .header p {
+            font-size: 0.95rem;
+            opacity: 0.9;
+        }
+
+        form {
+            padding: 30px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        @media (min-width: 600px) {
+            .form-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .full-width {
+                grid-column: span 2;
+            }
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #444;
+            font-size: 0.95rem;
+        }
+
+        .form-group label span.sub {
+            font-size: 0.8rem;
+            color: #777;
+            font-weight: normal;
+        }
+
+        input[type="number"],
+        select {
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="number"]:focus,
+        select:focus {
+            border-color: var(--primary);
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 20px;
+            margin-top: 5px;
+        }
+
+        .radio-group label {
+            font-weight: normal;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        button.btn-submit {
+            grid-column: span 2;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 10px;
+        }
+
+        button.btn-submit:hover {
+            background-color: var(--primary-hover);
+        }
+
+        /* Results Box */
+        .results-card {
+            margin: 30px;
+            padding: 25px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .results-card.active {
+            display: block;
+        }
+
+        .score-display {
+            font-size: 2rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .recommendation {
+            font-size: 1.1rem;
+            text-align: center;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 6px;
+        }
+
+        .breakdown-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+
+        .breakdown-table th, .breakdown-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+
+        .breakdown-table th {
+            background-color: #f1f1f1;
+        }
+
+        .special-note {
+            margin-top: 15px;
+            padding: 12px;
+            background-color: #fff3cd;
+            border-left: 4px solid #ffecb5;
+            color: #856404;
+            font-size: 0.9rem;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>Screening Questionnaire</h1>
+        <p>(according to the HUNT study)</p>
+    </div>
+
+    <form id="screeningForm">
+        <div class="form-grid">
+            <!-- 1. Age -->
+            <div class="form-group">
+                <label for="age">1. Age (In Years):</label>
+                <input type="number" id="age" min="18" max="100" required placeholder="e.g. 55">
+            </div>
+
+            <!-- 2. Sex -->
+            <div class="form-group">
+                <label>2. What sex were you born?</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="sex" value="male" required> Male</label>
+                    <label><input type="radio" name="sex" value="female"> Female</label>
+                </div>
+            </div>
+
+            <!-- 3. Years Smoked -->
+            <div class="form-group">
+                <label for="yearsSmoked">3. Total years smoked: <br><span class="sub">(0 if non-smoker)</span></label>
+                <input type="number" id="yearsSmoked" min="0" max="80" value="0" required>
+            </div>
+
+            <!-- 4. Cigarettes per day -->
+            <div class="form-group">
+                <label for="cigsPerDay">4. Cigarettes smoked daily: <br><span class="sub">(0 if non-smoker)</span></label>
+                <input type="number" id="cigsPerDay" min="0" max="100" value="0" required>
+            </div>
+
+            <!-- 5. Cough daily -->
+            <div class="form-group">
+                <label>5. Do you cough daily during periods of the year?</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="cough" value="yes" required> Yes</label>
+                    <label><input type="radio" name="cough" value="no" checked> No</label>
+                </div>
+            </div>
+
+            <!-- 6. Height & Weight -->
+            <div class="form-group">
+                <label for="height">6. Height (cm):</label>
+                <input type="number" id="height" min="100" max="250" placeholder="e.g. 175" required>
+            </div>
+            <div class="form-group">
+                <label for="weight">Weight (kg):</label>
+                <input type="number" id="weight" min="30" max="250" placeholder="e.g. 70" required>
+            </div>
+
+            <!-- 7. Quit time -->
+            <div class="form-group">
+                <label for="quitTime">7. If previously smoked, how long since you stopped? <span class="sub">(Years)</span></label>
+                <input type="number" id="quitTime" min="0" max="60" value="0" required>
+            </div>
+
+            <!-- 8. Smoke exposure -->
+            <div class="form-group">
+                <label for="smokeExposure">8. Hours usually in a smoky room each day? <span class="sub">(Hours)</span></label>
+                <input type="number" id="smokeExposure" min="0" max="24" value="0" step="0.5" required>
+            </div>
+
+            <!-- 9. Perception -->
+            <div class="form-group full-width">
+                <label for="perception">9. Do you feel lung cancer screening is necessary for individuals exposed to secondhand smoke (passive smokers)?</label>
+                <select id="perception" required>
+                    <option value="Strongly disagree">Strongly disagree</option>
+                    <option value="Disagree">Disagree</option>
+                    <option value="Neutral" selected>Neutral</option>
+                    <option value="Agree">Agree</option>
+                    <option value="Strongly agree">Strongly agree</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn-submit">Calculate Risk Score</button>
+        </div>
+    </form>
+
+    <!-- Results Section -->
+    <div id="resultsCard" class="results-card">
+        <div id="scoreDisplay" class="score-display">Total Score: 0</div>
+        <div id="recommendation" class="recommendation"></div>
+        <div id="specialWarning" class="special-note" style="display: none;"></div>
+
+        <h3>Points Breakdown</h3>
+        <table class="breakdown-table">
+            <thead>
+                <tr>
+                    <th>Factor</th>
+                    <th>Your Value</th>
+                    <th>Points</th>
+                </tr>
+            </thead>
+            <tbody id="breakdownBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Interpolation helper function based on nomogram data points
+    function interpolate(val, pointsMap) {
+        if (val <= pointsMap[0][0]) return pointsMap[0][1];
+        if (val >= pointsMap[pointsMap.length - 1][0]) return pointsMap[pointsMap.length - 1][1];
+
+        for (let i = 0; i < pointsMap.length - 1; i++) {
+            let [x1, y1] = pointsMap[i];
+            let [x2, y2] = pointsMap[i + 1];
+            if (val >= x1 && val <= x2) {
+                return y1 + ((val - x1) * (y2 - y1)) / (x2 - x1);
+            }
+        }
+        return 0;
+    }
+
+    // Nomogram mappings [Value, Points]
+    const ageMap = [[20, 0], [25, 2.7], [30, 4.5], [35, 5.8], [40, 6.8], [45, 7.6], [50, 8.2], [60, 9.0], [70, 9.5], [85, 10.0]];
+    const packYearsMap = [[0, 0], [1, 0.5], [5, 2.7], [10, 3.8], [15, 4.5], [25, 5.3], [40, 6.0]];
+    const bmiMap = [[18, 1.8], [26, 1.0], [40, 0.0]];
+    const quitTimeMap = [[0, 1.8], [5, 1.1], [45, 0.0]];
+    const smokeExpMap = [[0, 0.0], [6, 0.8]];
+    const smokeIntensityMap = [[0, 0.0], [10, 1.5], [25, 0.8], [40, 0.0]];
+
+    document.getElementById('screeningForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        // Get Input Values
+        const age = parseFloat(document.getElementById('age').value);
+        const sex = document.querySelector('input[name="sex"]:checked').value;
+        const yearsSmoked = parseFloat(document.getElementById('yearsSmoked').value);
+        const cigsPerDay = parseFloat(document.getElementById('cigsPerDay').value);
+        const cough = document.querySelector('input[name="cough"]:checked').value;
+        const height = parseFloat(document.getElementById('height').value);
+        const weight = parseFloat(document.getElementById('weight').value);
+        const quitTime = parseFloat(document.getElementById('quitTime').value);
+        const smokeExposure = parseFloat(document.getElementById('smokeExposure').value);
+
+        // Calculations
+        const bmi = weight / Math.pow(height / 100, 2);
+        const packYears = (yearsSmoked * cigsPerDay) / 20;
+
+        // Scoring Logic
+        const ptsMale = (sex === 'male') ? 0.3 : 0.0;
+        const ptsAge = interpolate(age, ageMap);
+        const ptsPackYears = interpolate(packYears, packYearsMap);
+        const ptsCough = (cough === 'yes') ? 0.6 : 0.0;
+        
+        // Clamp BMI between 18 and 40 for mapping
+        const clampedBmi = Math.min(Math.max(bmi, 18), 40);
+        const ptsBmi = interpolate(clampedBmi, bmiMap);
+
+        const ptsQuitTime = (yearsSmoked > 0) ? interpolate(quitTime, quitTimeMap) : 0;
+        const ptsSmokeExp = interpolate(smokeExposure, smokeExpMap);
+        const ptsIntensity = (cigsPerDay > 0) ? interpolate(cigsPerDay, smokeIntensityMap) : 0;
+
+        // Total
+        const totalPoints = ptsMale + ptsAge + ptsPackYears + ptsCough + ptsBmi + ptsQuitTime + ptsSmokeExp + ptsIntensity;
+
+        // Display Results
+        const resultsCard = document.getElementById('resultsCard');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const recommendation = document.getElementById('recommendation');
+        const specialWarning = document.getElementById('specialWarning');
+        const breakdownBody = document.getElementById('breakdownBody');
+
+        scoreDisplay.textContent = `Total Score: ${totalPoints.toFixed(1)} Points`;
+
+        if (totalPoints > 15) {
+            recommendation.textContent = "High Risk (>15 Points): Consider Low-Dose Computed Tomography (LDCT) Screening.";
+            recommendation.style.backgroundColor = "var(--alert-high)";
+            recommendation.style.color = "white";
+        } else {
+            recommendation.textContent = "Low to Moderate Risk (≤15 Points): Routine LDCT screening may not be necessary based on this score alone.";
+            recommendation.style.backgroundColor = "var(--alert-low)";
+            recommendation.style.color = "white";
+        }
+
+        // Check Special Non-Smoker / Secondhand Smoke condition
+        if (sex === 'female' && age > 50 && smokeExposure > 0) {
+            specialWarning.style.display = 'block';
+            specialWarning.innerHTML = "<strong>Special Note:</strong> Non-smokers are not safe! As a woman over 50 exposed to household smoke, you are recommended to <strong>screen early for yourself and your family</strong>.";
+        } else {
+            specialWarning.style.display = 'none';
+        }
+
+        // Populate Table Breakdown
+        breakdownBody.innerHTML = `
+            <tr><td>Sex (Male)</td><td>${sex.toUpperCase()}</td><td>${ptsMale.toFixed(2)}</td></tr>
+            <tr><td>Age</td><td>${age} yrs</td><td>${ptsAge.toFixed(2)}</td></tr>
+            <tr><td>Pack-Years</td><td>${packYears.toFixed(1)} pack-yrs</td><td>${ptsPackYears.toFixed(2)}</td></tr>
+            <tr><td>Daily Cough</td><td>${cough.toUpperCase()}</td><td>${ptsCough.toFixed(2)}</td></tr>
+            <tr><td>BMI</td><td>${bmi.toFixed(1)} kg/m²</td><td>${ptsBmi.toFixed(2)}</td></tr>
+            <tr><td>Quit Time</td><td>${quitTime} yrs</td><td>${ptsQuitTime.toFixed(2)}</td></tr>
+            <tr><td>Smoke Exposure</td><td>${smokeExposure} hrs/day</td><td>${ptsSmokeExp.toFixed(2)}</td></tr>
+            <tr><td>Smoking Intensity</td><td>${cigsPerDay} cigs/day</td><td>${ptsIntensity.toFixed(2)}</td></tr>
+        `;
+
+        resultsCard.classList.add('active');
+        resultsCard.scrollIntoView({ behavior: 'smooth' });
+    });
+</script>
+
+</body>
+</html>
